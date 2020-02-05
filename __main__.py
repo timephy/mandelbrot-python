@@ -5,6 +5,7 @@ import colorsys
 
 
 def rgb_conv(i):
+    """Convert iteration count to RGB color tuple."""
     if i == 0:
         return (0, 0, 0)
     color = 255 * array(colorsys.hsv_to_rgb(i / 255.0, 1.0, 1.0))
@@ -13,6 +14,7 @@ def rgb_conv(i):
 
 @njit
 def mandelbrot_impl(c, z, max_iter):
+    """The actual Mandelbrot function."""
     # keeping track of previous values is not worth it
     # njit improves performance by 8-10x
     for i in range(max_iter):
