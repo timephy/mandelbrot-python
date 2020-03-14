@@ -19,9 +19,9 @@ def mandelbrot_impl(c, z, max_iter):
     # njit improves performance by 8-10x
     for i in range(max_iter):
         # print(f"z_{i} = {z}")
-        z = z ** 2 + c
         if abs(z) > 2:
             return i
+        z = z ** 2 + c
     return 0
 
 
