@@ -1,6 +1,6 @@
 from numba import njit
 from PIL import Image
-from numpy import complex, array
+from numpy import array
 import colorsys
 import time
 
@@ -14,41 +14,33 @@ def rgb_conv(i):
 
 
 @njit
-def mandelbrot_impl(c, z, max_iter):
+def mandelbrot_impl(ca, cb, max_iter):  # ca real, cb imag
     """The actual Mandelbrot function."""
     # keeping track of previous values is not worth it
     # njit improves performance by 8-10x
+    za = ca
+    zb = cb
     for i in range(max_iter):
         # print(f"z_{i} = {z}")
-        z = z ** 2 + c
-        if abs(z) > 2:
-            return i
-    return 0
-
-
-@njit
-def mandelbrot_impl_perf(c, z, max_iter):
-    """The actual Mandelbrot function."""
-    # keeping track of previous values is not worth it
-    # njit improves performance by 8-10x
-    z = c  # this saves 8/12s
-    for i in range(max_iter):
-        # print(f"z_{i} = {z}")
-        if abs(z) > 2:
+        zas = za ** 2
+        zbs = zb ** 2
+        if zas + zbs > 4:
             return i + 1  # +1 to fix black outter circle
-        z = z ** 2 + c
+        zb = 2 * za * zb + cb
+        za = zas - zbs + ca
     return 0
 
 
-def mandelbrot(c, *, z=complex(0, 0), max_iter=1000):
+def mandelbrot(c, *, max_iter):
     # since njit-ed function cannot have kwargs with default value
-    return mandelbrot_impl_perf(c, z, max_iter)
+    return mandelbrot_impl(*c, max_iter)
 
 
 def __main__():
     RESOLUTION = (1080, 1080)
     SCALE = 2
-    POS = complex(0, 0)
+    POS = (0, 0)
+    ITERATIONS = 1000
 
     img = Image.new("RGB", RESOLUTION)
     pixels = img.load()
@@ -57,8 +49,8 @@ def __main__():
     dist_per_pixel = SCALE / (smaller_side / 2)
 
     # doing half of the calculation out of loop
-    left = POS.real - img.width / 2 * dist_per_pixel
-    top = POS.imag - img.height / 2 * dist_per_pixel
+    left = POS[0] - img.width / 2 * dist_per_pixel
+    top = POS[1] - img.height / 2 * dist_per_pixel
 
     time_before = time.time()
     for x in range(img.width):
@@ -68,8 +60,8 @@ def __main__():
         for y in range(img.height):
             # imag = POS.imag + (y - img.height / 2) * dist_per_pixel
             imag = top + y * dist_per_pixel
-            c = complex(real, imag)
-            pixels[x, y] = rgb_conv(mandelbrot(c))
+            c = (real, imag)
+            pixels[x, y] = rgb_conv(mandelbrot(c, max_iter=ITERATIONS))
     print(time.time() - time_before)
 
     img.show(title="mandelbrot")
